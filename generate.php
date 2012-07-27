@@ -88,7 +88,7 @@ class Generate_Task
         $content = $this->prettify($content);
 
         // Create the file
-        $this->write_to_file($file_path, $content, 'controller');
+        $this->write_to_file($file_path, $content);
     }
 
 
@@ -115,7 +115,7 @@ class Generate_Task
         $content = $this->prettify($content);
 
         // Create the file
-        $this->write_to_file($file_path, $content, 'model');
+        $this->write_to_file($file_path, $content);
     }
 
 
@@ -250,7 +250,7 @@ class Generate_Task
         $content = $this->prettify($content);
 
         // Create the file
-        return $this->write_to_file($file_path, $content, 'migration');
+        return $this->write_to_file($file_path, $content);
     }
 
 
@@ -278,17 +278,19 @@ class Generate_Task
             // As a precaution, let's see if we need to make the folder.
             File::mkdir(dirname($dir_path));
 
-            // Does the file already exist
+            // Does the file already exist?
+            // Get out of here if so.
             $file_path = $blade ? $dir_path . '.blade.php' : $dir_path . '.php';
-
             if ( File::exists($file_path) ) {
                 echo "Warning: File already exists at $file_path\n";
                 continue;
             }
 
-            // Otherwise, create the file.
-            File::put($file_path, "This is the $file_path view.");
-            echo "Create: $file_path\n";
+            // write to file
+            $this->write_to_file($file_path, 
+                                 "This is the $file_path view",
+                                 "Create: $file_path\n",
+                                 "Warning: File already exists at $file_path\n");
         }
     }
 
@@ -314,7 +316,6 @@ class Generate_Task
         $this->view($views);
         
         $this->model($resource_name);
-
     }
 
 
@@ -422,8 +423,16 @@ class Generate_Task
      * @param $type string [model|controller|migration]  
      * @return void
      */
-    protected function write_to_file($file_path, $content, $type)
+    protected function write_to_file($file_path, $content, $success = '', $error = '')
     {
+        if ( empty($error) ) {
+            $error = "Whoops - something went...errrr...wrong. :/\n";
+        }
+
+        if ( empty($success) ) {
+            $success = "Create: $file_path.\n";
+        }
+
         if ( File::exists($file_path) ) {
             // we don't want to overwrite it
             echo "Warning: File already exists at $file_path\n";
@@ -431,9 +440,10 @@ class Generate_Task
         }
 
         if ( File::put($file_path, $content) !== false ) {
-            echo "Success! Your new $type has been added to $file_path.\n";
+            echo $success;
+            // echo "Success! Your new $type has been added to $file_path.\n";
         } else {
-            echo "Whoops - something went...errrr...wrong. :/\n";
+            echo "Whoops - something...erghh...went wrong!\n";
         }
     }
 
