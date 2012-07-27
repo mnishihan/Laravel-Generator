@@ -28,6 +28,7 @@ class Generate_Task
     public function m($args) { return $this->model($args); }
     public function mig($args) { return $this->migration($args); }
     public function v($args) { return $this->view($args); }
+    public function r($args) { return $this->resource($args); }
 
 
     /**
@@ -452,3 +453,5 @@ class Generate_Task
         return $content;
     }
 }
+
+
