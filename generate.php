@@ -296,6 +296,11 @@ class Generate_Task
      */
     public function assets($assets)
     {
+        if( empty($assets) ) {
+            echo "Please specify the assets that you would like to create.";
+            return;
+        }
+
         foreach( $assets as $asset ) {
             $path = path('public');
 
