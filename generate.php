@@ -275,22 +275,11 @@ class Generate_Task
                     ? $_SERVER['CLI']['BLADE']
                     : true;
 
-        foreach( $paths as $path )
-        {
+        foreach( $paths as $path ) {
             $dir_path = path('app') . 'views/' . str_replace('.', '/', $path);
 
-            // As a precaution, let's see if we need to make the folder.
-            File::mkdir(dirname($dir_path));
-
-            // Does the file already exist?
-            // Get out of here if so.
+            // create the file
             $file_path = $blade ? $dir_path . '.blade.php' : $dir_path . '.php';
-            if ( File::exists($file_path) ) {
-                echo "Warning: File already exists at $file_path\n";
-                continue;
-            }
-
-            // write to file
             $this->write_to_file($file_path, "This is the $file_path view");
         }
     }
@@ -314,7 +303,7 @@ class Generate_Task
             $ext = pathinfo($asset);
             if ( !isset($ext['extension']) ) {
                 // Hmm - not sure what to do.
-                echo "Warning: Could not determine file type. Pleasey specify an extension.";
+                echo "Warning: Could not determine file type. Please specify an extension.";
                 continue;
             }
 
@@ -475,6 +464,9 @@ class Generate_Task
             echo "Warning: File already exists at $file_path\n";
             return;
         }
+
+        // As a precaution, let's see if we need to make the folder.
+        File::mkdir(dirname($file_path));
 
         if ( File::put($file_path, $content) !== false ) {
             echo $success;

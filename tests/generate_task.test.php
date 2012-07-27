@@ -222,6 +222,21 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 	}
 
 
+	public function test_can_create_nested_assets()
+	{
+		$this->generate->assets(array(
+			'admin/style.css',
+			'style3.css',
+		));
+
+		$css_path = path('public') . '/css';
+		$js_path = path('public') . '/js';
+
+		$this->assertFileExists("$css_path/style3.css");
+		$this->assertFileExists("$css_path/admin/style.css");
+	}
+
+
 	public function tearDown()
 	{
 		ob_end_clean();
@@ -230,5 +245,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		File::cleandir(path('app') . 'models');
 		File::cleandir(path('app') . 'migrations');
 		File::cleandir(path('app') . 'views');
+		File::cleandir(path('public') . 'css');
+		File::cleandir(path('public') . 'js');
 	}
 }
