@@ -186,7 +186,7 @@ class Generate_Task
         */
 
         if ( $table_event === 'delete' ) {
-            $content .= "" . $this->drop_columns($args) . "";
+            $content .= $this->drop_columns($args);
         } 
 
 
@@ -335,8 +335,6 @@ class Generate_Task
                 echo "There was an error in your formatting. Please try again. Did you specify both a field and data type for each? age:int";
                 die();
             }
-
-            $content .= "";
 
             // Primary key check
             if ( $field === 'id' and $type === 'integer' ) {
