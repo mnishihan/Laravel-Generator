@@ -447,7 +447,8 @@ class Generate_Task
         $content = preg_replace('/\$table(?!\))/', "\n\t\t\t\$table", $content);
         $content = str_replace('});}', "\n\t\t});\n\t}", $content);
         $content = str_replace(');}', ");\n\t}", $content);
-        
+        $content = str_replace("() {", "()\n\t{", $content);
+
         return $content;
     }
 }
