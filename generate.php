@@ -407,7 +407,7 @@ EOT;
      */
     protected function write_to_file($file_path, $content, $type)
     {
-        if ( file_put_contents($file_path, $content) !== false ) {
+        if ( File::put($file_path, $content) !== false ) {
             echo "Success! Your new $type has been added to $file_path.";
         } else {
             echo "Whoops - something went...errrr...wrong. :/";
