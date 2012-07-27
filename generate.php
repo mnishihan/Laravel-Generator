@@ -315,13 +315,13 @@ class Generate_Task
             // Set the path, dependent upon the file type.
             switch ($ext['extension']) {
                 case 'js':
-                    $path = $path . self::$js_dir . $asset;
+                    $path .= self::$js_dir . $asset;
                     break;
 
                 case 'css':
 
                 default:
-                    $path = $path . self::$css_dir . $asset;
+                    $path .= self::$css_dir . $asset;
                     break;
             }
 
