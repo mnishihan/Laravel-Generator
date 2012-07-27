@@ -350,6 +350,18 @@ public/css/style2.css
 public/js/admin/script.js
 ```
 
+Note: that may seem like a lot to write for a simple task, but you can always create aliases for this stuff.
+
+```bash
+alias la="php artisan generate:assets";
+```
+Now, it's as easy as doing:
+
+```bash
+la style.css script.js
+```
+
+
 Right now, you can only generate scripts and stylesheets, but it's a cinch to add more if you want. Just file 
 an issue, if you have a request.
 
