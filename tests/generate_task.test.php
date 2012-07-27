@@ -98,8 +98,8 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 			'create_users_table'
 		));
 
-		$file = glob(self::$migration . '*create_users_table.php');
-		$this->assertFileExists($file[0]);
+		$file = File::latest(self::$migration);
+		$this->assertFileExists((string)$file);
 	}
 
 
@@ -109,8 +109,8 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 			'create_users_table'
 		));
 
-		$file = glob(self::$migration . '*create_users_table.php');
-		$contents = File::get($file[0]);
+		$file = File::latest(self::$migration);
+		$contents = File::get($file);
 
 		$this->assertContains('class Create_Users_Table', $contents);
 		$this->assertContains('public function up', $contents);
@@ -126,8 +126,8 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 			'email:string'
 		));
 
-		$file = glob(self::$migration . '*create_users_table.php');
-		$contents = File::get($file[0]);
+		$file = File::latest(self::$migration);
+		$contents = File::get($file);
 
 		$this->assertContains('Schema::create', $contents);
 		$this->assertContains("\$table->increments('id')", $contents);
@@ -145,8 +145,8 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 			'user_id:integer'
 		));
 
-		$file = glob(self::$migration . '*add_user_id_to_posts_table.php');
-		$contents = File::get($file[0]);
+		$file = File::latest(self::$migration);
+		$contents = File::get($file);
 
 		$this->assertContains("Schema::table('posts'", $contents);
 		$this->assertContains("\$table->integer('user_id')", $contents);
