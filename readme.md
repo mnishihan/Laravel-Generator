@@ -22,6 +22,7 @@ This generator task will fill in the gaps. It can generate several things:
 - [Views](#views)
 - [Migrations and Schema](#migrations)
 - [Resources](#resources)
+- [Assets](#assets)
 
 ## Installation
 
@@ -332,6 +333,26 @@ With those three lines of code, you now have:
 
 Nifty, ay?
 
+
+### Assets
+
+Just as a convenience, you can also generate stylesheets and scripts through the command line.
+
+```bash
+php artisan generate:assets style.css style2.css admin/script.js
+```
+
+This will create three files:
+
+```bash
+public/css/style.css
+public/css/style2.css
+public/js/admin/script.js
+```
+
+Right now, you can only generate scripts and stylesheets, but it's a cinch to add more if you want. Just file 
+an issue, if you have a request.
+
 ## Tips and Tricks
 
 #### Shorthand
@@ -342,6 +363,7 @@ In addition to using the full generator names, there are also some convenience v
 - `generate:migration`     => `generate:mig`
 - `generate:view`          => `generate:v`
 - `generate:resource`      => `generate:r`
+- `generate:assets`        => `generate:a`
 
 You could also just create Bash aliases, like this:
 
