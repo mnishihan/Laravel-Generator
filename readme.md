@@ -332,7 +332,7 @@ With those three lines of code, you now have:
 
 Nifty, ay?
 
-## Coming Soon
+## Todo
 
-1. Code cleanup
+1. Don't overwrite existing files unless specified. Important.
 2. Generate tests
