@@ -287,10 +287,7 @@ class Generate_Task
             }
 
             // write to file
-            $this->write_to_file($file_path, 
-                                 "This is the $file_path view",
-                                 "Create: $file_path\n",
-                                 "Warning: File already exists at $file_path\n");
+            $this->write_to_file($file_path, "This is the $file_path view");
         }
     }
 
@@ -423,12 +420,8 @@ class Generate_Task
      * @param $type string [model|controller|migration]  
      * @return void
      */
-    protected function write_to_file($file_path, $content, $success = '', $error = '')
+    protected function write_to_file($file_path, $content, $success = '')
     {
-        if ( empty($error) ) {
-            $error = "Whoops - something went...errrr...wrong. :/\n";
-        }
-
         if ( empty($success) ) {
             $success = "Create: $file_path.\n";
         }
@@ -441,7 +434,6 @@ class Generate_Task
 
         if ( File::put($file_path, $content) !== false ) {
             echo $success;
-            // echo "Success! Your new $type has been added to $file_path.\n";
         } else {
             echo "Whoops - something...erghh...went wrong!\n";
         }
