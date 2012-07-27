@@ -15,10 +15,11 @@
 
 On its own, when running migrations, Laravel simply creates the specified file, and adds a bit of boilerplate code. It's then up to you to fill in the Schema and such. ...Well that's a pain.
 
-This generator task will fill in the gaps. It generates three things:
+This generator task will fill in the gaps. It can generate several things:
 
 - Controllers and actions
 - Models
+- Views
 - Migrations and schema
 
 ## Installation
