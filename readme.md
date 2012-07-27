@@ -357,5 +357,5 @@ lc config index
 ````
 
 ## Todo
-
+1. Test across browsers. Currently only tested on Mac.
 2. Generate tests
