@@ -21,6 +21,7 @@ This generator task will fill in the gaps. It can generate several things:
 - Models
 - Views
 - Migrations and schema
+- Resources
 
 ## Installation
 
@@ -295,7 +296,43 @@ Which will create:
 1. home/index.blade.php
 2. home/edit.blade.php
 
+### Resources
+
+But what if you want to save some time, and add a few things at once? Generating a resource will produce a 
+controller, model, and view files. For example:
+
+```bash
+    php artisan generate:resource post index show
+```
+
+This will create:
+
+1. A `post.php` model
+2. A `posts.php` controller with index + show actions
+3. A post views folder with `index.blade.php` and `show.blade.php` views.
+
+### Putting It All Together
+
+So let's rapidly generate a resource for blog posts.
+
+```bash
+php artisan generate:resource post index show
+php artisan generate:migration create_posts_table id:integer title:string body:text
+php artisan migrate 
+```
+
+Of course, if you haven't already installed the migrations table, you'd do that first: `php artisan migrate:install`.
+
+With those three lines of code, you now have:
+
+1. A controller with two actions
+2. A post model
+3. a post views folder with two views: index and show
+4. A new `posts` table in your db with id, title, and body fields.
+
+Nifty, ay?
+
 ## Coming Soon
 
-1. Generate resources
+1. Code cleanup
 2. Generate tests
