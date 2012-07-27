@@ -266,6 +266,40 @@ EOT;
 
 
     /**
+     * Create any number of views
+     *
+     * USAGE:
+     *
+     * php artisan generate:view home show
+     * php artisan generate:view home.index home.show --blade=false
+     *
+     * @param $args array
+     * @return void
+     */
+    public function view($paths)
+    {
+        $blade = isset($_SERVER['CLI']['BLADE'])
+                    ? $_SERVER['CLI']['BLADE']
+                    : true;
+
+        foreach( $paths as $path )
+        {
+            $full_path = path('app') . 'views/' . str_replace('.', '/', $path);
+
+            // As a precaution, let's see if we need to make the folder.
+            File::mkdir(dirname($full_path));
+
+            // Create the file.
+            if ( $blade ) {
+                File::put("{$full_path}.blade.php", "This is the $full_path view.");
+            } else {
+                File::put("{$full_path}.php", "This is the $full_path view.");
+            }
+        }
+    }
+
+
+    /**
      * Add columns
      *
      * Filters through the provided args, and builds up the schema text.
@@ -371,7 +405,7 @@ EOT;
      * @param $type string [model|controller|migration]  
      * @return void
      */
-    public function write_to_file($file_path, $content, $type)
+    protected function write_to_file($file_path, $content, $type)
     {
         if ( file_put_contents($file_path, $content) !== false ) {
             echo "Success! Your new $type has been added to $file_path.";

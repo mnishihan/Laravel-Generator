@@ -7,6 +7,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 	public static $model;
 	public static $controller;
 	public static $migration;
+	public static $view;
 
 	public function setup()
 	{
@@ -16,6 +17,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		self::$model = path('app') . '/models/book.php';
 		self::$controller = path('app') . '/controllers/admin.php';
 		self::$migration = path('app') . '/migrations/';
+		self::$view = path('app') . 'views/';
 
 		$this->generate = new Generate_Task;
 	}
@@ -97,7 +99,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		));
 
 		$file = glob(self::$migration . '*create_users_table.php');
-		$this->assertFileExists($file[1]); // just because I need the first
+		$this->assertFileExists($file[0]);
 	}
 
 
@@ -108,7 +110,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		));
 
 		$file = glob(self::$migration . '*create_users_table.php');
-		$contents = File::get($file[1]);
+		$contents = File::get($file[0]);
 
 		$this->assertContains('class Create_Users_Table', $contents);
 		$this->assertContains('public function up', $contents);
@@ -125,7 +127,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		));
 
 		$file = glob(self::$migration . '*create_users_table.php');
-		$contents = File::get($file[1]);
+		$contents = File::get($file[0]);
 
 		$this->assertContains('Schema::create', $contents);
 		$this->assertContains("\$table->increments('id')", $contents);
@@ -152,17 +154,39 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 	}
 	
 
+	// @group views
+	public function test_can_create_views()
+	{
+		$this->generate->view(array(
+			'book',
+			'test'
+		));
+
+		// Views default to blade
+		$this->assertFileExists(self::$view . 'book.blade.php');
+		$this->assertFileExists(self::$view . 'test.blade.php');
+	}
+
+	public function test_can_create_nested_views()
+	{
+		$this->generate->view(array(
+			'book.index',
+			'book.admin.show',
+			'book'
+		));
+
+		$this->assertFileExists(self::$view . 'book/index.blade.php');
+		$this->assertFileExists(self::$view . 'book/admin/show.blade.php');
+		$this->assertFileExists(self::$view . 'book.blade.php');
+	}
+
 	public function tearDown()
 	{
 		ob_end_clean();
 
-		@unlink(self::$model);
-		@unlink(self::$controller);
-
-		$files = glob(self::$migration . '*create_users_table.php');
-		@unlink($files[1]);
-
-		$files = glob(self::$migration . '*add_user_id_to_posts_table.php');
-		@unlink($files[0]);
+		File::delete(path('app') . 'controllers/admin.php');
+		File::cleandir(path('app') . 'models');
+		File::cleandir(path('app') . 'migrations');
+		File::cleandir(path('app') . 'views');
 	}
 }
