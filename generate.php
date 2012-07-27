@@ -20,6 +20,9 @@
 class Generate_Task 
 {
 
+    public static $css_dir = 'css/';
+    public static $js_dir  = 'js/';
+
     /**
      * Time Savers
      *
@@ -292,8 +295,40 @@ class Generate_Task
     }
 
 
+
+    public function assets($assets)
+    {
+        foreach( $assets as $asset ) {
+            $path = path('public');
+
+            // What type of file? CSS, JS?
+            $ext = pathinfo($asset);
+            if ( !isset($ext['extension']) ) {
+                // Hmm - not sure what to do.
+                echo "Warning: Could not determine file type. Pleasey specify an extension.";
+                continue;
+            }
+
+            // Set the path, dependent upon the file type.
+            switch ($ext['extension']) {
+                case 'js':
+                    $path = $path . self::$js_dir . $asset;
+                    break;
+
+                case 'css':
+
+                default:
+                    $path = $path . self::$css_dir . $asset;
+                    break;
+            }
+
+            $this->write_to_file($path, '');
+        }
+    }
+
+
     /**
-     * Generate resource
+     * Generate resource (model, controller, and views)
      *
      * @param $args array  
      * @return void

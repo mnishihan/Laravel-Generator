@@ -9,6 +9,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 	public static $migration;
 	public static $view;
 
+
 	public function setup()
 	{
 		// We don't care about the echos
@@ -19,8 +20,12 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		self::$migration = path('app') . '/migrations/';
 		self::$view = path('app') . 'views/';
 
+		// Clear dirs
+		File::delete(self::$controller);
+
 		$this->generate = new Generate_Task;
 	}
+
 
 	// @group models
 	public function test_can_create_model_file()
@@ -197,6 +202,25 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		$this->assertFileExists(path('app') . 'models/user.php');
 		$this->assertFileExists(path('app') . 'controllers/users.php');
 	}
+
+
+	// @group assets
+	public function test_can_create_assets()
+	{
+		$this->generate->assets(array(
+			'style1.css',
+			'style2.css',
+			'script1.js'
+		));
+
+		$css_path = path('public') . '/css';
+		$js_path = path('public') . '/js';
+
+		$this->assertFileExists("$css_path/style1.css");
+		$this->assertFileExists("$css_path/style2.css");
+		$this->assertFileExists("$js_path/script1.js");
+	}
+
 
 	public function tearDown()
 	{
