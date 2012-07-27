@@ -358,5 +358,4 @@ lc config index
 
 ## Todo
 
-1. Don't overwrite existing files unless specified. Important.
 2. Generate tests

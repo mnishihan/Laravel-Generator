@@ -46,7 +46,7 @@ class Generate_Task
     public function controller($args)
     {
         if ( empty($args) ) {
-            echo "Error: Please supply a class name, and your desired methods.";
+            echo "Error: Please supply a class name, and your desired methods.\n";
             return;
         }
 
@@ -146,7 +146,7 @@ class Generate_Task
     public function migration($args)
     {
         if ( empty($args) ) {
-            echo "Error: Please provide a name for your migration.";
+            echo "Error: Please provide a name for your migration.\n";
             return;
         }
 
@@ -273,20 +273,23 @@ class Generate_Task
 
         foreach( $paths as $path )
         {
-            $full_path = path('app') . 'views/' . str_replace('.', '/', $path);
+            $dir_path = path('app') . 'views/' . str_replace('.', '/', $path);
 
             // As a precaution, let's see if we need to make the folder.
-            File::mkdir(dirname($full_path));
+            File::mkdir(dirname($dir_path));
 
-            // Create the file.
-            if ( $blade ) {
-                File::put("{$full_path}.blade.php", "This is the $full_path view.");
-            } else {
-                File::put("{$full_path}.php", "This is the $full_path view.");
+            // Does the file already exist
+            $file_path = $blade ? $dir_path . '.blade.php' : $dir_path . '.php';
+
+            if ( File::exists($file_path) ) {
+                echo "Warning: File already exists at $file_path\n";
+                continue;
             }
-        }
 
-        echo "Success! Your new view(s) have been created.";
+            // Otherwise, create the file.
+            File::put($file_path, "This is the $file_path view.");
+            echo "Create: $file_path\n";
+        }
     }
 
 
@@ -333,7 +336,7 @@ class Generate_Task
             @list($field, $type, $setting) = explode(':', $arg);
 
             if ( !$type ) {
-                echo "There was an error in your formatting. Please try again. Did you specify both a field and data type for each? age:int";
+                echo "There was an error in your formatting. Please try again. Did you specify both a field and data type for each? age:int\n";
                 die();
             }
 
@@ -421,10 +424,16 @@ class Generate_Task
      */
     protected function write_to_file($file_path, $content, $type)
     {
+        if ( File::exists($file_path) ) {
+            // we don't want to overwrite it
+            echo "Warning: File already exists at $file_path\n";
+            return;
+        }
+
         if ( File::put($file_path, $content) !== false ) {
-            echo "Success! Your new $type has been added to $file_path.";
+            echo "Success! Your new $type has been added to $file_path.\n";
         } else {
-            echo "Whoops - something went...errrr...wrong. :/";
+            echo "Whoops - something went...errrr...wrong. :/\n";
         }
     }
 
