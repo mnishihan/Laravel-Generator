@@ -50,7 +50,7 @@ class Generate_Task
         }
 
         // Name of the class and file
-        $class_name = ucwords(array_shift($args));
+        $class_name = Str::plural(ucwords(array_shift($args)));
 
         // Where will this file be stored?
         $file_path = path('app') . 'controllers/' . strtolower("$class_name.php");
@@ -101,7 +101,8 @@ class Generate_Task
     public function model($args)
     {
         // Name of the class and file
-        $class_name = ucwords(array_shift($args));
+        $class_name = is_array($args) ? ucwords($args[0]) : ucwords($args);
+
         $file_path = path('app') . 'models/' . strtolower("$class_name.php");
 
         // Begin building up the file's content
@@ -302,6 +303,31 @@ EOT;
         }
 
         echo "Success! Your new view(s) have been created.";
+    }
+
+
+    /**
+     * Generate resource
+     *
+     * @param $args array  
+     * @return void
+     */
+    public function resource($args)
+    {
+        $this->controller($args);
+
+        $resource_name = array_shift($args);
+
+        // Let's take any supplied view names, and set them
+        // in the resource name's directory.
+        $views = array_map(function($val) use($resource_name) {
+            return "{$resource_name}.{$val}";
+        }, $args);
+
+        $this->view($views);
+        
+        $this->model($resource_name);
+
     }
 
 

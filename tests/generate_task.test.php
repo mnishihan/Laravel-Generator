@@ -15,7 +15,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		ob_start();
 
 		self::$model = path('app') . '/models/book.php';
-		self::$controller = path('app') . '/controllers/admin.php';
+		self::$controller = path('app') . '/controllers/admins.php';
 		self::$migration = path('app') . '/migrations/';
 		self::$view = path('app') . 'views/';
 
@@ -25,7 +25,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 	// @group models
 	public function test_can_create_model_file()
 	{
-		$this->generate->model(array('Book'));
+		$this->generate->model('Book');
 
 		$this->assertFileExists(self::$model);
 	}
@@ -167,6 +167,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		$this->assertFileExists(self::$view . 'test.blade.php');
 	}
 
+
 	public function test_can_create_nested_views()
 	{
 		$this->generate->view(array(
@@ -178,6 +179,23 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		$this->assertFileExists(self::$view . 'book/index.blade.php');
 		$this->assertFileExists(self::$view . 'book/admin/show.blade.php');
 		$this->assertFileExists(self::$view . 'book.blade.php');
+	}
+
+
+	// @group resource
+	public function test_can_create_resources()
+	{
+		$this->generate->resource(array(
+			'user',
+			'index',
+			'show'
+		));
+
+		$this->assertFileExists(self::$view . 'user/index.blade.php');
+		$this->assertFileExists(self::$view . 'user/show.blade.php');
+
+		$this->assertFileExists(path('app') . 'models/user.php');
+		$this->assertFileExists(path('app') . 'controllers/users.php');
 	}
 
 	public function tearDown()
