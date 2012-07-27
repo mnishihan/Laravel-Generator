@@ -56,14 +56,14 @@ class Generate_Task
         $file_path = path('app') . 'controllers/' . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        $content = "<?php \n\nclass {$class_name}_Controller extends Base_Controller \n{\n\n";
+        $content = "<?php class {$class_name}_Controller extends Base_Controller { ";
 
         // Let's see if they added "restful" anywhere in the args.
         $restful_pos = array_search('restful', $args);
         if ( $restful_pos !== false ) {
             array_splice($args, $restful_pos, 1);
             $restful = true;
-            $content .= "\tpublic \$restful = true;\n\n";
+            $content .= "public \$restful = true;";
         }
 
         // Now we filter through the args, and create the funcs.
@@ -71,17 +71,20 @@ class Generate_Task
             // Were params supplied? Like index:post?
             if ( strpos($method, ':') !== false ) {
                 list($method, $verb) = explode(':', $method);
-                $content .= "\tpublic function {$verb}_{$method}()";
+                $content .= "public function {$verb}_{$method}() ";
             } else {
                 $action = empty($restful) ? "action" : "get";
-                $content .= "\tpublic function {$action}_{$method}()";
+                $content .= "public function {$action}_{$method}() ";
             }
 
-            $content .= "\n\t{\n\n\t}\n\n";
+            $content .= "{}";
         }
 
         // Close class
         $content .= "}";
+
+        // Prettify
+        $content = $this->prettify($content);
 
         // Create the file
         $this->write_to_file($file_path, $content, 'controller');
@@ -106,7 +109,9 @@ class Generate_Task
         $file_path = path('app') . 'models/' . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        $content = "<?php \n\nclass $class_name extends Eloquent \n{\n\n}";
+        $content = "<?php class $class_name extends Eloquent {}";
+
+        $content = $this->prettify($content);
 
         // Create the file
         $this->write_to_file($file_path, $content, 'model');
@@ -170,18 +175,9 @@ class Generate_Task
 
 
         // Now, we begin creating the contents of the file.
-        $content = <<<EOT
-<?php 
-    
-class $class_name
-{
-
-    public function up()
-    {
-        Schema::$table_action('$table_name', function(\$table)
-        {
-
-EOT;
+        $content = "<?php class $class_name {"
+                 . "public function up() { "
+                 . "Schema::$table_action('$table_name', function(\$table) {";
 
         /*
         |--------------------------------------------------------------------------
@@ -190,7 +186,7 @@ EOT;
         */
 
         if ( $table_event === 'delete' ) {
-            $content .= "\t\t\t" . $this->drop_columns($args) . "\n";
+            $content .= "" . $this->drop_columns($args) . "";
         } 
 
 
@@ -205,18 +201,11 @@ EOT;
 
             // Let's only add timestamps if we're creating a table for the first time.
             if ( $table_action === 'create' ) {
-                $content .= "\t\t\t\$table->timestamps();\n";
+                $content .= "\$table->timestamps();";
             }
         }
 
-        $content .= <<<EOT
-        });
-    }
-
-    public function down()
-    {
-
-EOT;
+        $content .= "});} public function down() {";
 
 
         /*
@@ -225,9 +214,7 @@ EOT;
         |--------------------------------------------------------------------------
         */
         if ( $table_event === 'create' ) {
-            $content .= <<<EOT
-        Schema::drop('$table_name');
-EOT;
+            $content .= "Schema::drop('$table_name');";
 
 
         /*
@@ -236,16 +223,13 @@ EOT;
         |--------------------------------------------------------------------------
         */
         } else if ( $table_event == 'add' || $table_event == 'update' ) {
-            $content .= <<<EOT
-        Schema::table('$table_name', function(\$table)
-        {
-\t\t\t
-EOT;
+            $content .= "Schema::table('$table_name', function(\$table) {";
+
             if ( $table_event !== 'update' ) {
                 $content .= $this->drop_columns($args);
             }
 
-            $content .= "\n\t\t});";
+            $content .= "});";
 
 
         /*
@@ -254,16 +238,15 @@ EOT;
         |--------------------------------------------------------------------------
         */
         } else if ( $table_event == 'delete' ) {
-            $content .= <<<EOT
-        Schema::table('$table_name', function(\$table)
-        {
-
-EOT;
+            $content .= "Schema::table('$table_name', function(\$table) {";
             $content .= $this->add_columns($args);
-            $content .= "\t\t});";
+            $content .= "});";
         }
 
-        $content .= "\n\t}\n\n}";
+        $content .= "}}";
+
+        // prettify
+        $content = $this->prettify($content);
 
         // Create the file
         return $this->write_to_file($file_path, $content, 'migration');
@@ -353,7 +336,7 @@ EOT;
                 die();
             }
 
-            $content .= "\t\t\t";
+            $content .= "";
 
             // Primary key check
             if ( $field === 'id' and $type === 'integer' ) {
@@ -366,7 +349,7 @@ EOT;
                 }
             }
 
-            $content .= $rule . ";\n";
+            $content .= $rule . ";";
         }
 
         return $content;
@@ -444,5 +427,29 @@ EOT;
         } else {
             echo "Whoops - something went...errrr...wrong. :/";
         }
+    }
+
+
+    /**
+     * Crazy sloppy prettify. TODO - Cleanup
+     *
+     * @param  $content string  
+     * @return string
+     */
+    public function prettify($content)
+    {
+        $content = str_replace('<?php ', "<?php\n\n", $content);
+        $content = str_replace('{}', "\n{\n\n}", $content);
+        $content = str_replace('public', "\n\n\tpublic", $content);
+        $content = str_replace("() \n{\n\n}", "()\n\t{\n\n\t}", $content);
+        $content = str_replace('}}', "}\n\n}", $content);
+
+        // Migration-Specific
+        $content = preg_replace('/ ?Schema::/', "\n\t\tSchema::", $content);
+        $content = preg_replace('/\$table(?!\))/', "\n\t\t\t\$table", $content);
+        $content = str_replace('});}', "\n\t\t});\n\t}", $content);
+        $content = str_replace(');}', ");\n\t}", $content);
+        
+        return $content;
     }
 }
