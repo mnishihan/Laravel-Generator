@@ -19,6 +19,17 @@
  */
 class Generate_Task 
 {
+
+    /**
+     * Time Savers
+     *
+     */
+    public function c($args) { return $this->controller($args); }
+    public function m($args) { return $this->model($args); }
+    public function mig($args) { return $this->migration($args); }
+    public function v($args) { return $this->view($args); }
+
+
     /**
      * Generate a controller file with optional actions.
      *
@@ -125,13 +136,6 @@ class Generate_Task
      * @param  $args array  
      * @return string
      */
-
-    public function migrate($args)
-    {
-        // Just a convenience. Send it on.
-        return $this->migration($args);
-    }
-
     public function migration($args)
     {
         if ( empty($args) ) {
