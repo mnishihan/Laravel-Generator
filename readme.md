@@ -17,11 +17,11 @@ On its own, when running migrations, Laravel simply creates the specified file, 
 
 This generator task will fill in the gaps. It can generate several things:
 
-- Controllers and actions
-- Models
-- Views
-- Migrations and schema
-- Resources
+- [Controllers and actions](#controllers)
+- [Models](#models)
+- [Views](#views)
+- [Migrations and Schema](#migrations)
+- [Resources](#resources)
 
 ## Installation
 
@@ -331,6 +331,30 @@ With those three lines of code, you now have:
 4. A new `posts` table in your db with id, title, and body fields.
 
 Nifty, ay?
+
+## Tips and Tricks
+
+#### Shorthand
+In addition to using the full generator names, there are also some convenience versions.
+
+- `generate:controller`    => `generate:c`
+- `generate:model`         => `generate:m`
+- `generate:migration`     => `generate:mig`
+- `generate:view`          => `generate:v`
+- `generate:resource`      => `generate:r`
+
+You could also just create Bash aliases, like this:
+
+```bash
+alias lc="php artisan generate:controller";
+alias lm="php artisan generate:model"
+```
+
+Now, to create a controller, you can simply type:
+
+```bash
+lc config index
+````
 
 ## Todo
 
