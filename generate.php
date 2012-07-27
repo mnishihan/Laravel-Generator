@@ -300,6 +300,8 @@ EOT;
                 File::put("{$full_path}.php", "This is the $full_path view.");
             }
         }
+
+        echo "Success! Your new view(s) have been created.";
     }
 
 
