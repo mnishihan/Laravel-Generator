@@ -31,6 +31,7 @@ class Generate_Task
     public function m($args) { return $this->model($args); }
     public function mig($args) { return $this->migration($args); }
     public function v($args) { return $this->view($args); }
+    public function a($args) { return $this->assets($args); }
     public function r($args) { return $this->resource($args); }
 
 
@@ -295,7 +296,15 @@ class Generate_Task
     }
 
 
-
+    /**
+     * Create assets in the public directory
+     *
+     * USAGE:
+     * php artisan generate:assets style1.css some_module.js
+     * 
+     * @param  $assets array
+     * @return void
+     */
     public function assets($assets)
     {
         foreach( $assets as $asset ) {
