@@ -114,9 +114,7 @@ class Generate_Task
         $file_path = path('app') . 'models/' . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        $content = "<?php class $class_name extends Eloquent {}";
-
-        $content = $this->prettify($content);
+        $content = $this->prettify("<?php class $class_name extends Eloquent {}");
 
         // Create the file
         $this->write_to_file($file_path, $content);
