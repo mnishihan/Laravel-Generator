@@ -3,7 +3,7 @@
 /**
  * Laravel Generator
  * 
- * Rapidly create files, methods, and schema.
+ * Rapidly create models, views, migrations + schema, assets, etc.
  *
  * USAGE:
  * Add this file to your Laravel application/tasks directory
@@ -17,7 +17,7 @@
  * @since       July 26, 2012
  *
  */
-class Generate_Task 
+class Generate_Task extends Generator
 {
 
     public static $css_dir = 'css/';
@@ -27,12 +27,12 @@ class Generate_Task
      * Time Savers
      *
      */
-    public function c($args) { return $this->controller($args); }
-    public function m($args) { return $this->model($args); }
+    public function c($args)   { return $this->controller($args); }
+    public function m($args)   { return $this->model($args); }
     public function mig($args) { return $this->migration($args); }
-    public function v($args) { return $this->view($args); }
-    public function a($args) { return $this->assets($args); }
-    public function r($args) { return $this->resource($args); }
+    public function v($args)   { return $this->view($args); }
+    public function a($args)   { return $this->assets($args); }
+    public function r($args)   { return $this->resource($args); }
 
 
     /**
@@ -58,16 +58,16 @@ class Generate_Task
         $class_name = Str::plural(ucwords(array_shift($args)));
 
         // Where will this file be stored?
-        $file_path = path('app') . 'controllers/' . strtolower("$class_name.php");
+        $file_path = $this->path('controllers') . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        $content = "<?php class {$class_name}_Controller extends Base_Controller { ";
-
+        //$content = $this->new_class($class_name, $extends);
+        $content = $this->new_class($class_name . '_Controller', 'Base_Controller');
+        
         // Let's see if they added "restful" anywhere in the args.
         $restful_pos = array_search('restful', $args);
         if ( $restful_pos !== false ) {
             array_splice($args, $restful_pos, 1);
-            $restful = true;
             $content .= "public \$restful = true;";
         }
 
@@ -76,13 +76,13 @@ class Generate_Task
             // Were params supplied? Like index:post?
             if ( strpos($method, ':') !== false ) {
                 list($method, $verb) = explode(':', $method);
-                $content .= "public function {$verb}_{$method}() ";
+                $content .= $this->add_function_declaration("{$verb}_{$method}");
             } else {
-                $action = empty($restful) ? "action" : "get";
-                $content .= "public function {$action}_{$method}() ";
+                $action = $restful_pos ? 'get' : 'action';
+                $content .= $this->add_function_declaration("{$action}_{$method}");
             }
 
-            $content .= "{}";
+            $content .= "}";
         }
 
         // Close class
@@ -111,10 +111,10 @@ class Generate_Task
         // Name of the class and file
         $class_name = is_array($args) ? ucwords($args[0]) : ucwords($args);
 
-        $file_path = path('app') . 'models/' . strtolower("$class_name.php");
+        $file_path = $this->path('models') . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        $content = $this->prettify("<?php class $class_name extends Eloquent {}");
+        $content = $this->prettify( $this->new_class($class_name, 'Eloquent') . '}' );
 
         // Create the file
         $this->write_to_file($file_path, $content);
@@ -137,9 +137,7 @@ class Generate_Task
      *
      * php artisan generate:migration create_users_table
      * php artisan generate:migration create_users_table id:integer email:string:unique age:integer:nullable
-     *
      * php artisan generate:migration add_user_id_to_posts_table user_id:integer
-     *
      * php artisan generate:migration delete_active_from_users_table active:boolean
      *
      * @param  $args array  
@@ -152,25 +150,19 @@ class Generate_Task
             return;
         }
 
-        // Name of the class and file
         $class_name = array_shift($args);
 
         // Determine what the table name should be.
         $table_name = $this->parse_table_name($class_name);
 
-        // Capitalize where necessary
-        // a_simple_string => A_Simple_String
+        // Capitalize where necessary: a_simple_string => A_Simple_String
         $class_name = implode('_', array_map('ucwords', explode('_', $class_name)));
 
         // Let's create the path to where the migration will be stored.
-        $file_path = path('app') . 'migrations/' . date('Y_m_d_His') . strtolower("_$class_name.php");
+        $file_path = $this->path('migrations') . date('Y_m_d_His') . strtolower("_$class_name.php");
 
-        // Generate the content for the migration file and prettify it.
-        $content = $this->prettify(
-                        $this->generate_migration_content($class_name, $table_name, $args)
-                   );
+        $content = $this->generate_migration($class_name, $table_name, $args);
 
-        // Create the file
         return $this->write_to_file($file_path, $content);
     }
 
@@ -194,8 +186,7 @@ class Generate_Task
         }
 
         foreach( $paths as $path ) {
-            $file_path = path('app') . 'views/' . str_replace('.', '/', $path) . '.blade.php';
-
+            $file_path = $this->path('views') . str_replace('.', '/', $path) . '.blade.php';
             $this->write_to_file($file_path, "This is the $file_path view");
         }
     }
@@ -244,6 +235,83 @@ class Generate_Task
 
 
     /**
+     * Creates the content for the migration file.
+     *
+     * @param  $class_name string
+     * @param  $table_name string
+     * @param  $args array
+     * @return void
+     */
+    protected function generate_migration($class_name, $table_name, $args)
+    {
+        // Figure out what type of event is occuring. Create, Delete, Add?
+        list($table_action, $table_event) = $this->parse_action_type($class_name);
+
+        // Now, we begin creating the contents of the file.
+        $content = $this->new_class($class_name)
+                 . $this->add_function_declaration('up')
+                 . $this->new_schema($table_action, $table_name);
+
+        // Create the necessary code, based on the action/event type.
+        switch ($table_event) {
+            // When Deleting a Column
+            case 'delete':
+                $content .=
+                    $this->drop_columns($args)
+                    . '});}' . $this->add_function_declaration('down')
+
+                    // Delete Reversal
+                    . $this->new_schema('table', $table_name)
+                    . $this->add_columns($args)
+                    . "});}}";
+                break;
+
+            // When Creating, Adding, or Updating Columns
+            case 'create':
+                 // Build up the schema
+                $content .= 
+                    $this->add_columns($args)
+
+                    // Let's only add timestamps if
+                    // we're creating a table for the first time.
+                    . $this->set_column('timestamps', null) . ';'
+                    . '});}' . $this->add_function_declaration('down')
+
+                    // Create Reversal
+                    . "Schema::drop('$table_name');}}";
+                break;
+
+            // When adding columns
+            case 'add':
+                 // Build up the schema
+                $content .=
+                    $this->add_columns($args)
+                    . '});}' . $this->add_function_declaration('down')
+                
+                    // Add Column(s) Reversal
+                    . $this->new_schema('table', $table_name)
+                    . $this->drop_columns($args)
+                    . "});}}";
+                break;
+
+            // When updating columns
+            case 'update':
+                 // Build up the schema
+                $content .=
+                    $this->add_columns($args)
+                    . '});}' . $this->add_function_declaration('down')
+
+                    // Add Column(s) Reversal
+                    . $this->new_schema('table', $table_name)
+                    . "});}}";
+                break;
+        }
+
+        return $this->prettify($content);
+    }    
+
+
+    /**
      * Generate resource (model, controller, and views)
      *
      * @param $args array  
@@ -268,72 +336,7 @@ class Generate_Task
 
 
     /**
-     * Add columns
-     *
-     * Filters through the provided args, and builds up the schema text.
-     *
-     * @param  $args array  
-     * @return string
-     */
-    protected function add_columns($args)
-    {
-        $content = '';
-
-        // Build up the schema
-        foreach( $args as $arg ) {
-            // Like age, integer, and nullable
-            @list($field, $type, $setting) = explode(':', $arg);
-
-            if ( !$type ) {
-                echo "There was an error in your formatting. Please try again. Did you specify both a field and data type for each? age:int\n";
-                die();
-            }
-
-            // Primary key check
-            if ( $field === 'id' and $type === 'integer' ) {
-                $rule = "\$table->increments('id')";
-            } else {
-                $rule = "\$table->$type('$field')";
-
-                if ( !empty($setting) ) {
-                    $rule .= "->{$setting}()";
-                }
-            }
-
-            $content .= $rule . ";";
-        }
-
-        return $content;
-    }
-
-
-    /**
-     * Drop Columns
-     *
-     * Filters through the args and applies the "drop_column" syntax
-     *
-     * @param $args array  
-     * @return string
-     */
-    protected function drop_columns($args)
-    {
-        $fields = array_map(function($val) {
-            $bits = explode(':', $val);
-            return "'$bits[0]'";
-        }, $args);
-
-        if ( count($fields) > 1 ) {
-            $content = "\$table->drop_column(array(" . implode(', ', $fields) . "));";
-        } else {
-            $content = "\$table->drop_column($fields[0]);";
-        }
-
-        return $content;
-    }
-
-
-    /**
-     * Figure out what the name of the table is
+     * Figure out what the name of the table is.
      *
      * Fetch the value that comes right before "_table"
      * Or try to grab the very last word that comes after "_" - create_*users*
@@ -364,87 +367,6 @@ class Generate_Task
 
 
     /**
-     * Creates the content for the migration file.
-     *
-     * @param  $class_name string
-     * @param  $table_name string
-     * @param  $args array
-     * @return void
-     */
-    protected function generate_migration_content($class_name, $table_name, $args)
-    {
-        // What type of action? Creating a table? Adding a column? Deleting?
-        if ( preg_match('/delete|update|add(?=_)/i', $class_name, $matches) ) {
-            $table_action = 'table';
-            $table_event = strtolower($matches[0]);
-        } else {
-            $table_action = $table_event = 'create';
-        }
-
-        // Now, we begin creating the contents of the file.
-        $content = "<?php class $class_name {"
-                 . "public function up() { "
-                 . "Schema::$table_action('$table_name', function(\$table) {";
-
-        // Create the necessary code, based on the action/event type.
-        switch ($table_event) {
-            // When Deleting a Column
-            case 'delete':
-                $content .=
-                    $this->drop_columns($args)
-                    . "});} public function down() {"
-
-                    // Delete Reversal
-                    . "Schema::table('$table_name', function(\$table) {"
-                    . $this->add_columns($args)
-                    . "});}}";
-                break;
-
-            // When Creating, Adding, or Updating Columns
-            case 'create':
-                 // Build up the schema
-                $content .= 
-                    $this->add_columns($args)
-
-                    // Let's only add timestamps if
-                    // we're creating a table for the first time.
-                    . "\$table->timestamps();"
-                    . "});} public function down() {"
-
-                    // Create Reversal
-                    . "Schema::drop('$table_name');}}";
-                break;
-
-            // When adding columns
-            case 'add':
-                 // Build up the schema
-                $content .=
-                    $this->add_columns($args)
-                    . "});} public function down() {"
-                
-                    // Add Column(s) Reversal
-                    . "Schema::table('$table_name', function(\$table) {"
-                    . $this->drop_columns($args)
-                    . "});}}";
-                break;
-
-            // When updating columns
-            case 'update':
-                 // Build up the schema
-                $content .= $this->add_columns($args);
-                $content .= "});} public function down() {";
-
-                // Add Column(s) Reversal
-                $content .= "Schema::table('$table_name', function(\$table) {";
-                $content .= "});}}";
-                break;
-        }
-
-        return $content;    
-    }
-
-
-    /**
      * Write the contents to the specified file
      *
      * @param  $file_path string
@@ -454,9 +376,7 @@ class Generate_Task
      */
     protected function write_to_file($file_path, $content, $success = '')
     {
-        if ( empty($success) ) {
-            $success = "Create: $file_path.\n";
-        }
+        $success = $success ?: "Create: $file_path.\n";
 
         if ( File::exists($file_path) ) {
             // we don't want to overwrite it
@@ -472,6 +392,27 @@ class Generate_Task
         } else {
             echo "Whoops - something...erghh...went wrong!\n";
         }
+    }
+
+
+    /**
+     * Try to determine what type of table action should occur.
+     * Add, Create, Delete??
+     *
+     * @param  $class_name string  
+     * @return aray
+     */
+    public function parse_action_type($class_name)
+    {
+         // What type of action? Creating a table? Adding a column? Deleting?
+        if ( preg_match('/delete|update|add(?=_)/i', $class_name, $matches) ) {
+            $table_action = 'table';
+            $table_event = strtolower($matches[0]);
+        } else {
+            $table_action = $table_event = 'create';
+        }
+
+        return array($table_action, $table_event);
     }
 
 
@@ -497,5 +438,116 @@ class Generate_Task
         $content = str_replace("() {", "()\n\t{", $content);
 
         return $content;
+    }
+}
+
+
+abstract class Generator {
+
+    public function increment()
+    {
+        return "\$table->increments('id')";
+    }
+
+    public function set_column($type, $field = '')
+    {
+        if ( empty($field) ) {
+            return "\$table->$type()";
+        } else {
+            return "\$table->$type('$field')";
+        }
+        
+    }
+
+    public function add_option($option)
+    {
+        return "->{$option}()";
+    }
+
+        /**
+     * Add columns
+     *
+     * Filters through the provided args, and builds up the schema text.
+     *
+     * @param  $args array  
+     * @return string
+     */
+    protected function add_columns($args)
+    {
+        $content = '';
+
+        // Build up the schema
+        foreach( $args as $arg ) {
+            // Like age, integer, and nullable
+            @list($field, $type, $setting) = explode(':', $arg);
+
+            if ( !$type ) {
+                echo "There was an error in your formatting. Please try again. Did you specify both a field and data type for each? age:int\n";
+                die();
+            }
+
+            // Primary key check
+            if ( $field === 'id' and $type === 'integer' ) {
+                $rule = $this->increment();
+            } else {
+                $rule = $this->set_column($type, $field);
+
+                if ( !empty($setting) ) {
+                    $rule .= $this->add_option($setting);
+                }
+            }
+
+            $content .= $rule . ";";
+        }
+
+        return $content;
+    }
+
+
+    /**
+     * Drop Columns
+     *
+     * Filters through the args and applies the "drop_column" syntax
+     *
+     * @param $args array  
+     * @return string
+     */
+    protected function drop_columns($args)
+    {
+        $fields = array_map(function($val) {
+            $bits = explode(':', $val);
+            return "'$bits[0]'";
+        }, $args);
+       
+        if ( count($fields) === 1 ) {
+            return "\$table->drop_column($fields[0]);";
+        } else {
+            return "\$table->drop_column(array(" . implode(', ', $fields) . "));";
+        }
+    }
+
+    public function add_function_declaration($func_name)
+    {
+        return "public function {$func_name}() {";
+    }
+
+    public function new_schema($table_action, $table_name)
+    {
+        return "Schema::$table_action('$table_name', function(\$table) {";
+    }
+
+    public function new_class($class_name, $extends_class = '')
+    {
+        $content = "<?php class $class_name";
+        if ( !empty($extends_class) ) {
+            $content .= " extends $extends_class";
+        }
+
+        return $content . ' {';
+    }
+
+    public function path($dir)
+    {
+        return path('app') . "$dir/";
     }
 }
