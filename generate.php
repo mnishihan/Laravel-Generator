@@ -218,8 +218,6 @@ class Generate_Task
         }
 
         foreach( $assets as $asset ) {
-            $path = path('public');
-
             // What type of file? CSS, JS?
             $ext = pathinfo($asset);
             if ( !isset($ext['extension']) ) {
@@ -231,17 +229,16 @@ class Generate_Task
             // Set the path, dependent upon the file type.
             switch ($ext['extension']) {
                 case 'js':
-                    $path .= self::$js_dir . $asset;
+                    $path = self::$js_dir . $asset;
                     break;
 
                 case 'css':
-
                 default:
-                    $path .= self::$css_dir . $asset;
+                    $path = self::$css_dir . $asset;
                     break;
             }
 
-            $this->write_to_file($path, '');
+            $this->write_to_file(path('public') . $path, '');
         }
     }
 
