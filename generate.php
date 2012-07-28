@@ -167,89 +167,10 @@ class Generate_Task
         // Let's create the path to where the migration will be stored.
         $file_path = path('app') . 'migrations/' . date('Y_m_d_His') . strtolower("_$class_name.php");
 
-
-        // What type of action? Creating a table? Adding a column? Deleting?
-        if ( preg_match('/delete|update|add(?=_)/i', $class_name, $matches) ) {
-            $table_action = 'table';
-            $table_event = strtolower($matches[0]);
-        } else {
-            $table_action = $table_event = 'create';
-        }
-
-
-        // Now, we begin creating the contents of the file.
-        $content = "<?php class $class_name {"
-                 . "public function up() { "
-                 . "Schema::$table_action('$table_name', function(\$table) {";
-
-        /*
-        |--------------------------------------------------------------------------
-        | When Deleting a Column
-        |--------------------------------------------------------------------------
-        */
-
-        if ( $table_event === 'delete' ) {
-            $content .= $this->drop_columns($args);
-        } 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | When Creating, Adding, or Updating Columns
-        |--------------------------------------------------------------------------
-        */
-        if ( preg_match('/create|add|update/', $table_event) ) {
-            // Build up the schema
-            $content .= $this->add_columns($args);
-
-            // Let's only add timestamps if we're creating a table for the first time.
-            if ( $table_action === 'create' ) {
-                $content .= "\$table->timestamps();";
-            }
-        }
-
-        $content .= "});} public function down() {";
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Create Reversal
-        |--------------------------------------------------------------------------
-        */
-        if ( $table_event === 'create' ) {
-            $content .= "Schema::drop('$table_name');";
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Add Column(s) Reversal
-        |--------------------------------------------------------------------------
-        */
-        } else if ( $table_event == 'add' || $table_event == 'update' ) {
-            $content .= "Schema::table('$table_name', function(\$table) {";
-
-            if ( $table_event !== 'update' ) {
-                $content .= $this->drop_columns($args);
-            }
-
-            $content .= "});";
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Delete Reversal
-        |--------------------------------------------------------------------------
-        */
-        } else if ( $table_event == 'delete' ) {
-            $content .= "Schema::table('$table_name', function(\$table) {";
-            $content .= $this->add_columns($args);
-            $content .= "});";
-        }
-
-        $content .= "}}";
-
-        // prettify
-        $content = $this->prettify($content);
+        // Generate the content for the migration file and prettify it.
+        $content = $this->prettify(
+                        $this->generate_migration_content($class_name, $table_name, $args)
+                   );
 
         // Create the file
         return $this->write_to_file($file_path, $content);
@@ -448,6 +369,87 @@ class Generate_Task
 
 
     /**
+     * Creates the content for the migration file.
+     *
+     * @param  $class_name string
+     * @param  $table_name string
+     * @param  $args array
+     * @return void
+     */
+    protected function generate_migration_content($class_name, $table_name, $args)
+    {
+        // What type of action? Creating a table? Adding a column? Deleting?
+        if ( preg_match('/delete|update|add(?=_)/i', $class_name, $matches) ) {
+            $table_action = 'table';
+            $table_event = strtolower($matches[0]);
+        } else {
+            $table_action = $table_event = 'create';
+        }
+
+        // Now, we begin creating the contents of the file.
+        $content = "<?php class $class_name {"
+                 . "public function up() { "
+                 . "Schema::$table_action('$table_name', function(\$table) {";
+
+        // Create the necessary code, based on the action/event type.
+        switch ($table_event) {
+            // When Deleting a Column
+            case 'delete':
+                $content .=
+                    $this->drop_columns($args)
+                    . "});} public function down() {"
+
+                    // Delete Reversal
+                    . "Schema::table('$table_name', function(\$table) {"
+                    . $this->add_columns($args)
+                    . "});}}";
+                break;
+
+            // When Creating, Adding, or Updating Columns
+            case 'create':
+                 // Build up the schema
+                $content .= 
+                    $this->add_columns($args)
+
+                    // Let's only add timestamps if
+                    // we're creating a table for the first time.
+                    . "\$table->timestamps();"
+                    . "});} public function down() {"
+
+                    // Create Reversal
+                    . "Schema::drop('$table_name');}}";
+                break;
+
+            // When adding columns
+            case 'add':
+                 // Build up the schema
+                $content .=
+                    $this->add_columns($args)
+                    . "});} public function down() {"
+                
+                    // Add Column(s) Reversal
+                    . "Schema::table('$table_name', function(\$table) {"
+                    . $this->drop_columns($args)
+                    . "});}}";
+                break;
+
+            // When updating columns
+            case 'update':
+                 // Build up the schema
+                $content .= $this->add_columns($args);
+                $content .= "});} public function down() {";
+
+                // Add Column(s) Reversal
+                $content .= "Schema::table('$table_name', function(\$table) {";
+                $content .= "});}}";
+                break;
+        }
+
+        return $content;    
+    }
+
+
+    /**
      * Write the contents to the specified file
      *
      * @param  $file_path string
@@ -484,7 +486,7 @@ class Generate_Task
      * @param  $content string  
      * @return string
      */
-    public function prettify($content)
+    protected function prettify($content)
     {
         $content = str_replace('<?php ', "<?php\n\n", $content);
         $content = str_replace('{}', "\n{\n\n}", $content);
@@ -502,5 +504,3 @@ class Generate_Task
         return $content;
     }
 }
-
-
