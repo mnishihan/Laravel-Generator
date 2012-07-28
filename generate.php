@@ -168,10 +168,8 @@ class Generate_Task
         $file_path = path('app') . 'migrations/' . date('Y_m_d_His') . strtolower("_$class_name.php");
 
 
-        // Determine what type of event is occurring.
-        // Creating a table? Adding a column? Deleting one?
-        preg_match('/delete|update|add(?=_)/i', $class_name, $matches);
-        if ( !empty($matches) ) {
+        // What type of action? Creating a table? Adding a column? Deleting?
+        if ( preg_match('/delete|update|add(?=_)/i', $class_name, $matches) ) {
             $table_action = 'table';
             $table_event = strtolower($matches[0]);
         } else {
