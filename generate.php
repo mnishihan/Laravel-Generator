@@ -264,22 +264,21 @@ class Generate_Task
      * USAGE:
      *
      * php artisan generate:view home show
-     * php artisan generate:view home.index home.show --blade=false
+     * php artisan generate:view home.index home.show
      *
      * @param $args array
      * @return void
      */
     public function view($paths)
     {
-        $blade = isset($_SERVER['CLI']['BLADE'])
-                    ? $_SERVER['CLI']['BLADE']
-                    : true;
+        if ( empty($paths) ) {
+            echo "Warning: no views were specified. Add some!\n";
+            return;
+        }
 
         foreach( $paths as $path ) {
-            $dir_path = path('app') . 'views/' . str_replace('.', '/', $path);
+            $file_path = path('app') . 'views/' . str_replace('.', '/', $path) . '.blade.php';
 
-            // create the file
-            $file_path = $blade ? $dir_path . '.blade.php' : $dir_path . '.php';
             $this->write_to_file($file_path, "This is the $file_path view");
         }
     }

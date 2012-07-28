@@ -280,12 +280,6 @@ This will create two files within the `views` folder:
 1. index.blade.php
 2. show.blade.php
 
-While Blade is the default, if you'd prefer to not use it, simply add `--blade=false`, like this:
-
-```bash
-php artisan generate:view index show --blade=false
-```
-
 You can also specify subdirectories, via the period.
 
 ```bash
