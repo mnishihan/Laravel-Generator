@@ -21,7 +21,11 @@ class Generate_Task extends Generator
 {
 
     public static $css_dir = 'css/';
+    public static $sass_dir  = 'css/sass/';
+    public static $less_dir  = 'css/less/';
+
     public static $js_dir  = 'js/';
+    public static $coffee_dir  = 'js/coffee/';
 
     /**
      * Time Savers
@@ -221,6 +225,19 @@ class Generate_Task extends Generator
             switch ($ext['extension']) {
                 case 'js':
                     $path = self::$js_dir . $asset;
+                    break;
+
+                case 'coffee':
+                    $path = self::$coffee_dir . $asset;
+                    break;
+
+                case 'scss':
+                case 'sass':
+                    $path = self::$sass_dir . $asset;
+                    break;
+
+                case 'less':
+                    $path = self::$less_dir . $asset;
                     break;
 
                 case 'css':
