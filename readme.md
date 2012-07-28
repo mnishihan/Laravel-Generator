@@ -355,9 +355,12 @@ Now, it's as easy as doing:
 la style.css script.js
 ```
 
+The default directory paths are:
 
-Right now, you can only generate scripts and stylesheets, but it's a cinch to add more if you want. Just file 
-an issue, if you have a request.
+- CSS => `public/css/`
+- JavaScript => `public/js/`
+- CoffeeScript => `public/js/coffee/`
+- Sass (sass or scss extension) => `public/css/sass`
 
 ## Tips and Tricks
 
