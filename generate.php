@@ -50,6 +50,27 @@ class Generate_Task
 
 
     /**
+     * Simply echos out some help info.
+     *
+     */
+    public function help() { $this->run(); }
+    public function run()
+    {
+        echo <<<EOT
+\n=============GENERATOR COMMANDS=============\n        
+generate:controller [name] [methods]
+generate:model [name]
+generate:view [name]
+generate:migration [name] [field:type]
+generate:test [name] [methods]
+generate:assets [asset]
+generate:resource [name] [methods/views]
+\n=====================END====================\n
+EOT;
+    }
+
+
+    /**
      * Generate a controller file with optional actions.
      *
      * USAGE:
