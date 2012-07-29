@@ -68,7 +68,7 @@ class Generate_Task
         }
 
         // Name of the class and file
-        $class_name = Str::plural(ucwords(array_shift($args)));
+        $class_name = ucwords(array_shift($args));
 
         // Where will this file be stored?
         $file_path = $this->path('controllers') . strtolower("$class_name.php");
@@ -366,9 +366,14 @@ class Generate_Task
      */
     public function resource($args)
     {
+        // Pluralize controller name
+        if ( !preg_match('/admin|config/', $args[0]) ) {
+            $args[0] = Str::plural($args[0]);
+        }
         $this->controller($args);
 
-        $resource_name = array_shift($args);
+        // Singular for everything else
+        $resource_name = Str::singular(array_shift($args));
 
         // Let's take any supplied view names, and set them
         // in the resource name's directory.
