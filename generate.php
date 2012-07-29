@@ -45,6 +45,7 @@ class Generate_Task
     public function mig($args) { return $this->migration($args); }
     public function v($args)   { return $this->view($args); }
     public function a($args)   { return $this->assets($args); }
+    public function t($args)   { return $this->test($args); }
     public function r($args)   { return $this->resource($args); }
 
 
@@ -125,7 +126,8 @@ class Generate_Task
         $file_path = $this->path('models') . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        $this->prettify( Content::new_class($class_name, 'Eloquent' ) );
+        Content::new_class($class_name, 'Eloquent' );
+        $this->prettify();
 
         // Create the file
         $this->write_to_file($file_path);
@@ -256,6 +258,46 @@ class Generate_Task
 
             $this->write_to_file(path('public') . $path, '');
         }
+    }
+
+
+    /**
+     * Create PHPUnit test classes with optional methods
+     *
+     * USAGE:
+     *
+     * php artisan generate:test membership
+     * php artisan generate:test membership can_disable_user can_reset_user_password
+     *
+     * @param $args array  
+     * @return void
+     */
+    public function test($args)
+    {
+        if ( empty($args) ) {
+            echo "Please specify a name for your test class.\n";
+            return;
+        }
+
+        $class_name = ucwords(array_shift($args));
+
+        $file_path = $this->path('tests') . strtolower("{$class_name}.test.php");
+
+        // Begin building up the file's content
+        Content::new_class($class_name . '_Test', 'PHPUnit_Framework_TestCase');
+
+        // add the functions
+        $tests = '';
+        foreach($args as $test) {
+            // make lower case
+            $tests .= Content::func("test_{$test}");
+        }
+
+        // add funcs to class
+        Content::add_after('{', $tests);
+
+        // Create the file
+        $this->write_to_file($file_path, $this->prettify());
     }
 
 

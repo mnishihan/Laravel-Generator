@@ -237,6 +237,25 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 	}
 
 
+	// @group test
+	public function test_can_create_test_files()
+	{
+		$this->generate->test(array(
+			'user',
+			'can_disable_user',
+			'can_reset_user_password'
+		));
+
+		$file = File::latest($this->generate->path('tests'));
+		$this->assertFileExists((string)$file);
+
+		$content = File::get($file);
+		$this->assertContains('class User_Test extends PHPUnit_Framework_TestCase', $content);
+		$this->assertContains('public function test_can_disable_user()', $content);
+		$this->assertContains('public function test_can_reset_user_password()', $content);
+	}
+
+
 	public function tearDown()
 	{
 		ob_end_clean();

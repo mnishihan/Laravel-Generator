@@ -23,6 +23,7 @@ This generator task will fill in the gaps. It can generate several things:
 - [Migrations and Schema](#migrations)
 - [Resources](#resources)
 - [Assets](#assets)
+- [Tests](#tests)
 
 ## Installation
 
@@ -361,6 +362,52 @@ The default directory paths are:
 - JavaScript => `public/js/`
 - CoffeeScript => `public/js/coffee/`
 - Sass (sass or scss extension) => `public/css/sass`
+
+
+### Tests
+
+Laravel Generator can also generate PHPUnit test classes for you, like so:
+
+```bash
+php artisan generate:test user
+```
+
+If you only specify a class name, as we've done above, you'll get:
+
+```php
+<?php
+// application/tests/user.test.php
+class User_Test extends PHPUnit_Framework_TestCase 
+{
+
+}
+```
+
+However, you can also add test cases as well.
+
+```bash
+php artisan generate:test user can_reset_user_password can_disable_user
+```
+
+This command will now produce:
+
+```php
+<?php
+
+class User_Test extends PHPUnit_Framework_TestCase {
+
+    public function test_can_reset_user_password()
+    {
+
+    }
+
+    public function test_can_disable_user()
+    {
+
+    }
+
+}
+```
 
 ## Tips and Tricks
 
