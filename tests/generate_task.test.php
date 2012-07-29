@@ -16,7 +16,7 @@ class Generate_Test extends PHPUnit_Framework_TestCase
 		ob_start();
 
 		self::$model = path('app') . '/models/book.php';
-		self::$controller = path('app') . '/controllers/admins.php';
+		self::$controller = path('app') . '/controllers/admin.php';
 		self::$migration = path('app') . '/migrations/';
 		self::$view = path('app') . 'views/';
 
