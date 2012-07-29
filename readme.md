@@ -435,7 +435,3 @@ g:c config index
 ````
 
 [Refer here](https://github.com/JeffreyWay/Laravel-Generator/blob/master/aliases.md) for more alias recommendations.
-
-## Todo
-1. Test across browsers. Currently only tested on Mac.
-2. Generate tests
