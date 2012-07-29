@@ -301,11 +301,9 @@ class Generate_Task
             $fields .= $this->set_column('timestamps', null) . ';';
         }
 
-
         else if ( $table_event === 'delete' ) {
             $fields = $this->drop_columns($args);
         }
-
 
         else if ( $table_event === 'add' || $table_event === 'update' ) {
             $fields = $this->add_columns($args);
@@ -473,12 +471,9 @@ class Generate_Task
 
     protected function set_column($type, $field = '')
     {
-        if ( empty($field) ) {
-            return "\$table->$type()";
-        } else {
-            return "\$table->$type('$field')";
-        }
-        
+        return empty($field)
+            ? "\$table->$type()"
+            : "\$table->$type('$field')";
     }
 
 
