@@ -17,15 +17,24 @@
  * @since       July 26, 2012
  *
  */
-class Generate_Task extends Generator
+class Generate_Task
 {
 
+    /*
+     * Set these paths to the location of your assets.
+     */
     public static $css_dir = 'css/';
     public static $sass_dir  = 'css/sass/';
     public static $less_dir  = 'css/less/';
 
     public static $js_dir  = 'js/';
     public static $coffee_dir  = 'js/coffee/';
+
+    /*
+     * The content for the generate file
+     */
+    public static $content;
+
 
     /**
      * Time Savers
@@ -65,14 +74,14 @@ class Generate_Task extends Generator
         $file_path = $this->path('controllers') . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        //$content = $this->new_class($class_name, $extends);
-        $content = $this->new_class($class_name . '_Controller', 'Base_Controller');
-        
+        Content::new_class($class_name . '_Controller', 'Base_Controller');
+
+        $content = '';
         // Let's see if they added "restful" anywhere in the args.
         $restful_pos = array_search('restful', $args);
         if ( $restful_pos !== false ) {
             array_splice($args, $restful_pos, 1);
-            $content .= "public \$restful = true;";
+            $content .= 'public $restful = true;';
         }
 
         // Now we filter through the args, and create the funcs.
@@ -80,23 +89,21 @@ class Generate_Task extends Generator
             // Were params supplied? Like index:post?
             if ( strpos($method, ':') !== false ) {
                 list($method, $verb) = explode(':', $method);
-                $content .= $this->add_function_declaration("{$verb}_{$method}");
+                $content .= Content::func("{$verb}_{$method}");
             } else {
                 $action = $restful_pos ? 'get' : 'action';
-                $content .= $this->add_function_declaration("{$action}_{$method}");
+                $content .= Content::func("{$action}_{$method}");
             }
-
-            $content .= "}";
         }
 
-        // Close class
-        $content .= "}";
+        // Add methods/actions to class.
+        Content::add_after('{', $content);
 
         // Prettify
-        $content = $this->prettify($content);
+        $this->prettify();
 
         // Create the file
-        $this->write_to_file($file_path, $content);
+        $this->write_to_file($file_path);
     }
 
 
@@ -118,10 +125,10 @@ class Generate_Task extends Generator
         $file_path = $this->path('models') . strtolower("$class_name.php");
 
         // Begin building up the file's content
-        $content = $this->prettify( $this->new_class($class_name, 'Eloquent') . '}' );
+        $this->prettify( Content::new_class($class_name, 'Eloquent' ) );
 
         // Create the file
-        $this->write_to_file($file_path, $content);
+        $this->write_to_file($file_path);
     }
 
 
@@ -165,9 +172,9 @@ class Generate_Task extends Generator
         // Let's create the path to where the migration will be stored.
         $file_path = $this->path('migrations') . date('Y_m_d_His') . strtolower("_$class_name.php");
 
-        $content = $this->generate_migration($class_name, $table_name, $args);
+        $this->generate_migration($class_name, $table_name, $args);
 
-        return $this->write_to_file($file_path, $content);
+        return $this->write_to_file($file_path);
     }
 
 
@@ -191,7 +198,8 @@ class Generate_Task extends Generator
 
         foreach( $paths as $path ) {
             $file_path = $this->path('views') . str_replace('.', '/', $path) . '.blade.php';
-            $this->write_to_file($file_path, "This is the $file_path view");
+            self::$content = "This is the $file_path view";
+            $this->write_to_file($file_path);
         }
     }
 
@@ -265,67 +273,91 @@ class Generate_Task extends Generator
         list($table_action, $table_event) = $this->parse_action_type($class_name);
 
         // Now, we begin creating the contents of the file.
-        $content = $this->new_class($class_name)
-                 . $this->add_function_declaration('up')
-                 . $this->new_schema($table_action, $table_name);
+        Content::new_class($class_name);
 
-        // Create the necessary code, based on the action/event type.
-        switch ($table_event) {
-            // When Deleting a Column
-            case 'delete':
-                $content .=
-                    $this->drop_columns($args)
-                    . '});}' . $this->add_function_declaration('down')
+        /* The Migration Up Function */
+        $up = $this->migration_up($table_event, $table_action, $table_name, $args);
+       
+        /* The Migration Down Function */
+        $down = $this->migration_down($table_event, $table_action, $table_name, $args);
 
-                    // Delete Reversal
-                    . $this->new_schema('table', $table_name)
-                    . $this->add_columns($args)
-                    . "});}}";
-                break;
+        // Add both the up and down function to the migration class.
+        Content::add_after('{', $up . $down);
 
-            // When Creating, Adding, or Updating Columns
-            case 'create':
-                 // Build up the schema
-                $content .= 
-                    $this->add_columns($args)
+        return $this->prettify();
+    }
 
-                    // Let's only add timestamps if
-                    // we're creating a table for the first time.
-                    . $this->set_column('timestamps', null) . ';'
-                    . '});}' . $this->add_function_declaration('down')
 
-                    // Create Reversal
-                    . "Schema::drop('$table_name');}}";
-                break;
+    protected function migration_up($table_event, $table_action, $table_name, $args)
+    {
+        $up = Content::func('up');
 
-            // When adding columns
-            case 'add':
-                 // Build up the schema
-                $content .=
-                    $this->add_columns($args)
-                    . '});}' . $this->add_function_declaration('down')
-                
-                    // Add Column(s) Reversal
-                    . $this->new_schema('table', $table_name)
-                    . $this->drop_columns($args)
-                    . "});}}";
-                break;
+        // Insert a new schema function into the up function.
+        $up = $this->add_after('{', Content::schema($table_action, $table_name), $up);
 
-            // When updating columns
-            case 'update':
-                 // Build up the schema
-                $content .=
-                    $this->add_columns($args)
-                    . '});}' . $this->add_function_declaration('down')
-
-                    // Add Column(s) Reversal
-                    . $this->new_schema('table', $table_name)
-                    . "});}}";
-                break;
+        // Create the field rules for for the schema
+        if ( $table_event === 'create' ) {
+            $fields = $this->add_columns($args);
+            $fields .= $this->set_column('timestamps', null) . ';';
         }
 
-        return $this->prettify($content);
-    }    
+
+        else if ( $table_event === 'delete' ) {
+            $fields = $this->drop_columns($args);
+        }
+
+
+        else if ( $table_event === 'add' || $table_event === 'update' ) {
+            $fields = $this->add_columns($args);
+        }
+
+        // Insert the fields into the schema function
+        return $this->add_after('function($table) {', $fields, $up);
+    }
+
+
+    protected function migration_down($table_event, $table_action, $table_name, $args)
+    {
+        $down = Content::func('down');
+
+        if ( $table_event === 'create' ) {
+           $schema = Content::schema('drop', $table_name, false);
+
+           // Add drop schema into down function
+           $down = $this->add_after('{', $schema, $down);
+        } else {
+            // for delete, add, and update
+            $schema = Content::schema('table', $table_name);
+        }
+
+        if ( $table_event === 'delete' ) {
+            $fields = $this->add_columns($args);
+
+            // add fields to schema
+            $schema = $this->add_after('function($table) {', $fields, $schema);
+            
+            // add schema to down function
+            $down = $this->add_after('{', $schema, $down);
+        }
+
+        else if ( $table_event === 'add' ) {
+            $fields = $this->drop_columns($args);
+
+            // add fields to schema
+            $schema = $this->add_after('function($table) {', $fields, $schema);
+
+            // add schema to down function
+            $down = $this->add_after('{', $schema, $down);
+
+        }
+
+        else if ( $table_event === 'update' ) {
+            // add schema to down function
+            $down = $this->add_after('{', $schema, $down);
+        }
+
+        return $down;
+    }
 
 
     /**
@@ -391,7 +423,7 @@ class Generate_Task extends Generator
      * @param $type string [model|controller|migration]  
      * @return void
      */
-    protected function write_to_file($file_path, $content, $success = '')
+    protected function write_to_file($file_path,  $success = '')
     {
         $success = $success ?: "Create: $file_path.\n";
 
@@ -404,7 +436,7 @@ class Generate_Task extends Generator
         // As a precaution, let's see if we need to make the folder.
         File::mkdir(dirname($file_path));
 
-        if ( File::put($file_path, $content) !== false ) {
+        if ( File::put($file_path, self::$content) !== false ) {
             echo $success;
         } else {
             echo "Whoops - something...erghh...went wrong!\n";
@@ -419,7 +451,7 @@ class Generate_Task extends Generator
      * @param  $class_name string  
      * @return aray
      */
-    public function parse_action_type($class_name)
+    protected function parse_action_type($class_name)
     {
          // What type of action? Creating a table? Adding a column? Deleting?
         if ( preg_match('/delete|update|add(?=_)/i', $class_name, $matches) ) {
@@ -433,40 +465,13 @@ class Generate_Task extends Generator
     }
 
 
-    /**
-     * Crazy sloppy prettify. TODO - Cleanup
-     *
-     * @param  $content string  
-     * @return string
-     */
-    protected function prettify($content)
-    {
-        $content = str_replace('<?php ', "<?php\n\n", $content);
-        $content = str_replace('{}', "\n{\n\n}", $content);
-        $content = str_replace('public', "\n\n\tpublic", $content);
-        $content = str_replace("() \n{\n\n}", "()\n\t{\n\n\t}", $content);
-        $content = str_replace('}}', "}\n\n}", $content);
-
-        // Migration-Specific
-        $content = preg_replace('/ ?Schema::/', "\n\t\tSchema::", $content);
-        $content = preg_replace('/\$table(?!\))/', "\n\t\t\t\$table", $content);
-        $content = str_replace('});}', "\n\t\t});\n\t}", $content);
-        $content = str_replace(');}', ");\n\t}", $content);
-        $content = str_replace("() {", "()\n\t{", $content);
-
-        return $content;
-    }
-}
-
-
-abstract class Generator {
-
-    public function increment()
+    protected function increment()
     {
         return "\$table->increments('id')";
     }
 
-    public function set_column($type, $field = '')
+
+    protected function set_column($type, $field = '')
     {
         if ( empty($field) ) {
             return "\$table->$type()";
@@ -476,12 +481,14 @@ abstract class Generator {
         
     }
 
-    public function add_option($option)
+
+    protected function add_option($option)
     {
         return "->{$option}()";
     }
 
-        /**
+
+    /**
      * Add columns
      *
      * Filters through the provided args, and builds up the schema text.
@@ -543,28 +550,75 @@ abstract class Generator {
         }
     }
 
-    public function add_function_declaration($func_name)
+    public function path($dir)
     {
-        return "public function {$func_name}() {";
+        return path('app') . "$dir/";
     }
 
-    public function new_schema($table_action, $table_name)
+
+    /**
+     * Crazy sloppy prettify. TODO - Cleanup
+     *
+     * @param  $content string  
+     * @return string
+     */
+    protected function prettify()
     {
-        return "Schema::$table_action('$table_name', function(\$table) {";
+        $content = self::$content;
+
+        $content = str_replace('<?php ', "<?php\n\n", $content);
+        $content = str_replace('{}', "\n{\n\n}", $content);
+        $content = str_replace('public', "\n\n\tpublic", $content);
+        $content = str_replace("() \n{\n\n}", "()\n\t{\n\n\t}", $content);
+        $content = str_replace('}}', "}\n\n}", $content);
+
+        // Migration-Specific
+        $content = preg_replace('/ ?Schema::/', "\n\t\tSchema::", $content);
+        $content = preg_replace('/\$table(?!\))/', "\n\t\t\t\$table", $content);
+        $content = str_replace('});}', "\n\t\t});\n\t}", $content);
+        $content = str_replace(');}', ");\n\t}", $content);
+        $content = str_replace("() {", "()\n\t{", $content);
+
+        self::$content = $content;
     }
 
-    public function new_class($class_name, $extends_class = '')
+
+    public function add_after($where, $to_add, $content)
     {
-        $content = "<?php class $class_name";
+        return str_replace($where, $where . $to_add, $content);
+    }
+}
+
+class Content {
+    public static function new_class($name, $extends_class = null)
+    {
+        $content = "<?php class $name";
         if ( !empty($extends_class) ) {
             $content .= " extends $extends_class";
         }
 
-        return $content . ' {';
+        $content .= ' {}';
+
+        Generate_Task::$content = $content;
     }
 
-    public function path($dir)
+    public static function func($func_name)
     {
-        return path('app') . "$dir/";
+        return "public function {$func_name}() {}";
+    }
+
+    public static function schema($table_action, $table_name, $cb = true)
+    {
+        $content = "Schema::$table_action('$table_name'";
+
+        return $cb
+            ? $content . ', function($table) {});'
+            : $content . ');';
+    }
+
+    public static function add_after($where, $to_add)
+    {
+        Generate_Task::$content = str_replace($where, $where . $to_add, Generate_Task::$content);
+
     }
 }
