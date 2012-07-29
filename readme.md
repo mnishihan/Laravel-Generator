@@ -424,15 +424,17 @@ In addition to using the full generator names, there are also some convenience v
 You could also just create Bash aliases, like this:
 
 ```bash
-alias lc="php artisan generate:controller";
-alias lm="php artisan generate:model"
+alias g:c="php artisan generate:controller";
+alias g:m="php artisan generate:model"
 ```
 
 Now, to create a controller, you can simply type:
 
 ```bash
-lc config index
+g:c config index
 ````
+
+[Refer here](https://github.com/JeffreyWay/Laravel-Generator/blob/master/aliases.md) for more alias recommendations.
 
 ## Todo
 1. Test across browsers. Currently only tested on Mac.
